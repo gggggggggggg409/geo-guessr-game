@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <title>Mini GeoGuessr</title>
+  <style>
+    body { font-family: Arial; text-align: center; background:#f0f0f0; }
+    #map { height: 400px; width: 80%; margin: 20px auto; }
+    #street { height: 300px; width: 80%; margin: 20px auto; }
+    button { padding:10px 20px; font-size:16px; }
+  </style>
+</head>
+<body>
+  <h1>Mini GeoGuessr 🌍</h1>
+  <p>Gissa var du är!</p>
+
+  <div id="street">(Street View laddas här)</div>
+  <div id="map"></div>
+  <button onclick="checkGuess()">Gissa!</button>
+
+  <p id="result"></p>
+
+<script>
+let actualLocation;
+let guessMarker;
+let map;
+
+function initGame() {
+  const locations = [
+    {lat: 59.3293, lng: 18.0686}, // Stockholm
+    {lat: 48.8566, lng: 2.3522},  // Paris
+    {lat: 40.7128, lng: -74.0060}, // New York
+    {lat: 35.6895, lng: 139.6917} // Tokyo
+  ];
+
+  actualLocation = locations[Math.floor(Math.random()*locations.length)];
+
+  map = new google.maps.Map(document.getElementById("map"), {
+    zoom: 2,
+    center: {lat: 20, lng: 0}
+  });
+
+  map.addListener("click", (e) => {
+    if (guessMarker) guessMarker.setMap(null);
+    guessMarker = new google.maps.Marker({
+      position: e.latLng,
+      map: map
+    });
+  });
+
+  const panorama = new google.maps.StreetViewPanorama(
+    document.getElementById("street"), {
+      position: actualLocation,
+      pov: { heading: 165, pitch: 0 },
+      zoom: 1
+    }
+  );
+}
+
+function checkGuess() {
+  if (!guessMarker) {
+    alert("Klicka på kartan först!");
+    return;
+  }
+
+  const guess = guessMarker.getPosition();
+
+  const dist = getDistance(
+    guess.lat(), guess.lng(),
+    actualLocation.lat, actualLocation.lng
+  );
+
+  document.getElementById("result").innerText =
+    "Du var " + Math.round(dist) + " km fel!";
+}
+
+function getDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2-lat1) * Math.PI/180;
+  const dLon = (lon2-lon1) * Math.PI/180;
+  const a =
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}
+</script>
+
+<script src="https://maps.googleapis.com/maps/api/js?key=DIN_API_KEY&callback=initGame" async defer></script>
+
+</body>
+</html>
